@@ -1,0 +1,1053 @@
+library(shiny)
+library(shinydashboard)
+library(DT)
+library(plotly)
+library(tidyverse)
+library(slickR)
+library(wordcloud)
+library(scales)
+library(timetk)
+library(ggplot2)
+
+
+# UI
+ui <- dashboardPage(
+  dashboardHeader(title = "NFT Analysis", titleWidth  = 550),
+  dashboardSidebar(
+    width = 200,
+    sidebarMenu(
+      menuItem("Welcome", tabName = "page1", icon = icon("home")),
+      
+      menuItem(
+        "Bet on Market Information",
+        tabName = "page2",
+        icon = icon("line-chart")
+      ),
+      
+      menuItem(
+        "Bet on Strategies",
+        tabName = "page3",
+        icon = icon("user")
+      ),
+      
+      menuItem("Database", tabName = "page4", icon = icon("database"))
+    )
+  ),
+  
+  dashboardBody(tabItems(
+    #Page1
+    tabItem(
+      tabName = "page1",
+      
+      div(
+        id = 'Welcome',
+        h1('Welcome to the NFT world !',
+           style = "color:darkblue" , align = "center") ,
+        hr()
+      ),
+      tags$style(
+        HTML(
+          "
+                .box.box-solid.box-primary>.box-header {
+                background:	#0C4876
+                }
+                .box.box-solid.box-primary{
+                }
+                "
+        )
+      ),
+      box(
+        width = 20,
+        title = "Introduction",
+        status = "primary",
+        solidHeader = TRUE,
+        fluidRow(
+          column(
+            7,
+            h4(
+              "A non-fungible token (NFT) is a financial security consisting of digital data stored in a blockchain, a form of distributed ledger.
+                             The ownership of an NFT is recorded in the blockchain and can be transferred by the owner. Because NFTs are uniquely identifiable,
+                             they differ from cryptocurrencies, which are fungible. With the increase in the popularity of digital currency, a new digital commodity has appeared in the public eye,
+                             that is, NFTs that use digital currency for transactions. The classification of NFT includes art, game-related items, collectibles, etc."
+            ),
+            hr(),
+            h4("Research Questions:"),
+            h4(
+              "1. What is the market trend of number of sales/traders/active wallets on each NFT segment?"
+            ),
+            h4("2. What is the predicted trend of NFT trading in the next few days?"),
+            h4("3. Is NFT a good asset to hedge the risk of cryptocurrency?"),
+            h4(
+              "4. Under different strategy, what portfolio will generate highest Sharpe ratio and lowest variance?"
+            ),
+            h4("5. How significant is each hedging strategy?"),
+          ),
+          column(5,
+                 plotOutput("WordCloud"),)
+        ),
+      ),
+      hr(),
+      box(
+        width = 20,
+        title = "Top 3 NFTs",
+        status = "primary",
+        solidHeader = TRUE,
+        fluidRow(
+          column(
+            7,
+            h4("Everydays-The First 5000 Days"),
+            h5(
+              "The artwork, a compendium of the artist's over-13-year daily drawing project,
+                             opened for bidding at just $100 before skyrocketing to $69 million, becoming the first-most expensive NFT works."
+            ),
+            h4("Pak's Clock"),
+            h5(
+              "The piece, which represents the number of days Julian Assange has been in prison, was part of the Censored NFT collection
+                           sold to pay the Wikileaks founder's legal fees as he fights extradition to the U.S. from London. The winning bidder,
+                           a 10,000-person collective called AssangeDAO, shelled out $52 million."
+            ),
+            h4("Human One"),
+            h5(
+              "The NFT of Human One is an ongoing journey that changes based on time of day and will continue to evolve over time.
+                           Hidden in the video will be clues to unlock additional NFTs. These NFTs will be an edition of 2 with one going to the winner,
+                           and the other going to the owner of it.
+                           The latest highest sale price is $29.8 million."
+            ),
+          ),
+          column(5,
+                 slickROutput(
+                   "slickr", width = "400px", height = "400px"
+                 ),)
+        ),
+      ),
+      hr(),
+      box(
+        width = 20,
+        title = "Group 128",
+        status = "primary",
+        solidHeader = TRUE,
+                   h4("Team Member"),
+                   h5("Wenbo Han, Ruoyi Duan, Xinyang Li, and we are Carey MSF graduates."),
+      ),
+      
+    ),
+    
+    #Page2
+    tabItem(
+      tabName = "page2",
+      box(
+        width = 20,
+        height = 600,
+        title = "Market Trend on Number of Sales",
+        status = "primary",
+        solidHeader = TRUE,
+        fluidRow(column(
+          3,
+          checkboxGroupInput(
+            "show_vars",
+            "Choose your variables :",
+            c("all", "art", "collectible", "game", "metaverse", "utility"),
+            selected = "all"
+          ),
+          
+        ),
+        
+        column(9,
+               plotlyOutput("G_Market_Trend"))),
+      ),
+      
+      hr(),
+      box(
+        width = 20,
+        height = 1000,
+        title = "Market Trend on Traders",
+        status = "primary",
+        solidHeader = TRUE,
+        fluidRow(column(
+          3,
+          sliderInput(
+            "year",
+            "Year:",
+            min = as.Date("2017-11-09", "%Y-%m-%d"),
+            max = as.Date("2022-06-17", "%Y-%m-%d"),
+            value = as.Date("2022-01-01", timeFormat = "%Y-%m-%d"),
+            step = 21,
+            animate = animationOptions(interval = 1000, loop = FALSE)
+          ),
+        ),
+        column(
+          9,
+          plotlyOutput("G_Buyer_Seller", height = 800)
+        )),
+      ),
+      hr(),
+      box(
+        width = 20,
+        height = 1000,
+        title = "Market Trend on Active Wallets",
+        status = "primary",
+        solidHeader = TRUE,
+        fluidRow(column(
+          4,
+          dateInput(
+            "date",
+            "Please choose a date you are interested:",
+            min = as.Date("2017-11-09", "%Y-%m-%d"),
+            max = as.Date("2022-06-17", "%Y-%m-%d"),
+            value = as.Date("2022-01-01", timeFormat = "%Y-%m-%d"),
+          ),
+          plotlyOutput("G_Percentage", height = 600, width = 400)
+          
+        ),
+        column(
+          8,
+          plotlyOutput("G_Wallets", height = 800, width = 1000)
+        )),
+      ),
+      
+    ),
+    
+    #Page3
+    tabItem(
+      tabName = "page3",
+      box(
+        width = 20,
+        height = 1400,
+        title = "Simulation Strategy",
+        status = "primary",
+        solidHeader = TRUE,
+        fluidRow(
+          column(
+            6,
+            numericInput(
+              "daynumber",
+              label = h3("Choose the number of days to simulate: "),
+              min = 2,
+              value = 10,
+              width = 500
+            ),
+            numericInput(
+              "pathnumber",
+              label = h3("Choose the number of paths to simulate: "),
+              value = 100,
+              width = 500,
+              min = 10,
+              max  = 500,
+              step = 10
+            ),
+          ),
+          column(
+            6,
+            h4("Instructional video"),
+            HTML(
+              '<iframe width="400" height="300"
+                      src="https://www.youtube.com/embed/--6F3rt1qY8" frameborder="0"
+                      allowfullscreen></iframe>'
+            )
+            
+          ),
+          
+        ),
+        
+        
+        fluidRow(
+          column(6,
+                 column(
+                   6,
+                   box(
+                     width = 35,
+                     title = "Expected Daily Return:",
+                     status = "primary",
+                     solidHeader = TRUE,
+                     textOutput("Expected_return")
+                   )
+                 ),
+                 column(
+                   6,
+                   box(
+                     width = 20,
+                     title = "Probability of Win:",
+                     status = "primary",
+                     solidHeader = TRUE,
+                     textOutput("P_win")
+                   )
+                 ),),
+          column(
+            6,
+            column(
+              3,
+              box(
+                width = 15,
+                title = "5% to Win:",
+                status = "primary",
+                solidHeader = TRUE,
+                textOutput("win_0.05")
+              )
+            ),
+            column(
+              3,
+              box(
+                width = 15,
+                title = "1% to Win:",
+                status = "primary",
+                solidHeader = TRUE,
+                textOutput("win_0.01")
+              )
+            ),
+            column(
+              3,
+              box(
+                width = 15,
+                title = "5% to Lose:",
+                status = "primary",
+                solidHeader = TRUE,
+                textOutput("lose_0.05")
+              )
+            ),
+            column(
+              3,
+              box(
+                width = 15,
+                title = "1% to Lose:",
+                status = "primary",
+                solidHeader = TRUE,
+                textOutput("lose_0.01")
+              )
+            ),
+            
+          ),
+          
+        ),
+        fluidRow(
+          column(6,
+                 
+                 plotlyOutput("G_hist_Simulation", height = 800)),
+          column(
+            6,
+            
+            plotlyOutput("G_Simulation", height = 400, width = 600),
+            hr(),
+            
+            plotlyOutput("G_Expected", height = 400, width = 600),
+            
+          )
+          
+        ),
+      ),
+      
+      hr(),
+      
+      box(
+        width = 20,
+        height = 1000,
+        title = "Hedge Strategy",
+        status = "primary",
+        solidHeader = TRUE,
+        selectInput(
+          "Portfolio",
+          h3("Choose your portfolio:"),
+          c("Long NFTZ& Short ETH",
+            "Short NFTZ& Long ETH"),
+          selected = "Long NFTZ& Short ETH"
+        ),
+        h3("Portfolio Information Under Maximization Sharpe Ratio"),
+        fluidRow(
+          column(
+            3,
+            box(
+              width = 20,
+              title = "NFTZ Weight",
+              status = "primary",
+              solidHeader = TRUE,
+              textOutput("NFTZ_max")
+            )
+          ),
+          column(
+            3,
+            box(
+              width = 20,
+              title = "ETH weight",
+              status = "primary",
+              solidHeader = TRUE,
+              textOutput("ETH_max")
+            )
+          ),
+          column(
+            3,
+            box(
+              width = 20,
+              title = "Daily Return",
+              status = "primary",
+              solidHeader = TRUE,
+              textOutput("MR_max")
+            )
+          ),
+          column(
+            3,
+            box(
+              width = 20,
+              title = "Risk",
+              status = "primary",
+              solidHeader = TRUE,
+              textOutput("Risk_max")
+            )
+          ),
+        ),
+        
+        h3("Portfolio Information Under Minimize Variance"),
+        fluidRow(
+          column(
+            3,
+            box(
+              width = 20,
+              title = "NFTZ Weight",
+              status = "primary",
+              solidHeader = TRUE,
+              textOutput("NFTZ_min")
+            )
+          ),
+          column(
+            3,
+            box(
+              width = 20,
+              title = "ETH weight",
+              status = "primary",
+              solidHeader = TRUE,
+              textOutput("ETH_min")
+            )
+          ),
+          column(
+            3,
+            box(
+              width = 20,
+              title = "Daily Return",
+              status = "primary",
+              solidHeader = TRUE,
+              textOutput("MR_min")
+            )
+          ),
+          column(
+            3,
+            box(
+              width = 20,
+              title = "Risk",
+              status = "primary",
+              solidHeader = TRUE,
+              textOutput("Risk_min")
+            )
+          ),
+        ),
+        
+        fluidRow(
+          column(4,
+                 plotlyOutput("G_efficient_frontier")),
+          column(4,
+                 plotlyOutput("G_portfolio_composition")),
+          column(4,
+                 plotlyOutput("G_history_Performance")),
+          
+        ),
+        
+      ),
+    ),
+    
+    ##############################################################################3
+    
+    
+    #Page4
+    tabItem(
+      tabName = "page4",
+      tags$strong(h1("Data Source")),
+      h4(
+        "  Our website is established on the below dataset. If you have further interest, please click the 'click here' button in each dataset to visit the data source"
+      ),
+      
+      tags$strong(h3("NFT Market")),
+      h5(
+        "This dataset is collected from Nonfungible webstie. We download all datasets and merge them into one dataset."
+      ),
+      tags$a(href = "https://nonfungible.com/market-tracker", "Click here!"),
+      dataTableOutput("NFT_Market"),
+      
+      tags$strong(h3("NFT Tweets")),
+      h5(
+        "This dataset is downloaded from Kaggle. We build our nnword dataset based on this dataset to save running time of our website."
+      ),
+      tags$a(href = "https://www.kaggle.com/datasets/mathurinache/nft-tweets", "Click here!"),
+      dataTableOutput("NFT_Tweet"),
+      
+      tags$strong(h3("NFTZ(ETF of NFT)")),
+      h5(
+        "  This dataset is downloaded from Yahoo Finance. The name of NFTZ is 'Defiance Digital Revolution ETF'. This ETF invest in the digital economy with NFTs, Blockchain and the NFT market place."
+      ),
+      tags$a(href = "https://finance.yahoo.com/quote/NFTZ?p=NFTZ&.tsrc=fin-srch", "Click here!"),
+      dataTableOutput("NFTZ"),
+      
+      tags$strong(h3("ETH(Ethereum-USD)")),
+      h5("This dataset is downloaded from Yahoo Finance."),
+      tags$a(href = "https://finance.yahoo.com/quote/ETH-USD?p=ETH-USD&.tsrc=fin-srch", "Click here!"),
+      dataTableOutput("ETH"),
+      tags$br(),
+    )
+    
+  ))
+)
+
+
+# Define server logic required to draw a histogram
+server <- function(input, output, session) {
+  #Load_data
+  nnwords <- read.csv("nnwords.csv")
+  data <- read.csv("data.csv")
+  ETH <- read.csv("eth.csv")
+  nftz <- read.csv("nftz.csv")
+  nft_tweet <- read.csv("nft_tweets.csv")
+  nftz$Date <- as.Date(nftz$Date, format = "%Y-%m-%d")
+  ETH$Date <- as.Date(ETH$Date, format = "%Y-%m-%d")
+  
+  
+  #Page1
+  output$WordCloud <- renderPlot({
+    set.seed(1)
+    minFreq = 10
+    maxWords = 100
+    
+    cover <- wordcloud(
+      words = nnwords$word,
+      freq = nnwords$freq,
+      min.freq = minFreq,
+      max.words = maxWords,
+      random.order = FALSE,
+      colors = nnwords$color,
+      ordered.colors = TRUE
+    )
+    return(cover)
+  })
+  output$slickr <- renderSlickR({
+    imgs <- list.files("www", pattern = ".jpg", full.names = TRUE)
+    slickR(imgs)
+  })
+  
+  
+  #Page2
+  ################################################################################1
+  output$value <- renderPrint({
+    input$show_vars
+  })
+  output$value <- renderPrint({
+    input$action
+  })
+  output$value <- renderPrint({
+    input$action2
+  })
+  output$value <- renderPrint({
+    input$year
+  })
+  
+  
+  #GRAPH #1 #Market_Trend
+  output$G_Market_Trend <- renderPlotly({
+    df <- data %>%
+      select(seq(2, 14, 1))
+    df$Date = as.Date(df$Date, format = "%Y-%m-%d")
+    
+    G_Market_trend <- df %>%
+      filter(Seg == input$show_vars) %>%
+      ggplot() +
+      geom_line(aes(x = Date, y = NumSales, color = Seg)) +
+      theme_bw() +
+      theme(panel.grid.major.y = element_blank(),
+            panel.grid.minor.y = element_blank()) +
+      labs(
+        title = paste("Number of Sales Reaches a High Level in 2021"),
+        y = "Number of Sales",
+        colour = "Segment"
+      ) +
+      scale_y_continuous(labels = label_number(suffix = " M", scale = 1e-6))
+    
+    
+    
+    ggplotly(G_Market_trend)
+  })
+  
+  #Graph_2
+  
+  output$G_Buyer_Seller <- renderPlotly({
+    temp_df <- data %>%
+      select("Date", "Seg",  "Buyer", "Seller") %>%
+      filter(Date == as.Date(input$year, format = "%Y-%m-%d")) %>%
+      pivot_longer(c("Buyer", "Seller"),
+                   names_to = "user",
+                   values_to = "number")
+    
+    G_bar_chart <- temp_df %>%
+      ggplot() +
+      geom_bar(aes(x = Seg,
+                   y = number,
+                   fill = user),
+               stat = "identity",
+               position = position_dodge()) +
+      theme_bw() +
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank()) +
+      labs(
+        title = " Unique Buyers and Sellers Focus on Collectible and Game Segment in Current Year",
+        Segment = " The Number of Unique Buyer",
+        y = "The Number of Unique Buyer/Seller",
+        x = "Segment",
+        fill = "Trader"
+      ) +
+      annotate(
+        "text",
+        x = "metaverse",
+        y = 0.95 * max(temp_df$number),
+        size = 12,
+        colour = rgb(0, 0, 0, 0.5),
+        label = input$year
+      )
+    
+    ggplotly(G_bar_chart)
+  })
+  
+  #Graph 3&4
+  output$G_Wallets = renderPlotly({
+    tempdf <- data %>%
+      select("Date", "Seg",  "Wallets")
+    tempdf$Date <- as.Date(tempdf$Date, format = "%Y-%m-%d")
+    
+    G_Wallets <- tempdf %>%
+      ggplot() +
+      geom_area((aes(
+        x = Date, y = Wallets, fill = Seg
+      ))) +
+      labs(title = "Active Wallets are Mainly Compostied of Game and Other Segment from 2022",
+           y = "The Number of Wallets",
+           fill = "Segment") +
+      theme_bw() +
+      theme(panel.grid.major.y = element_blank(),
+            panel.grid.minor.y = element_blank()) +
+      ylim(0, NA)  +
+      scale_y_continuous(labels = label_number(suffix = " M", scale = 1e-6))
+    ggplotly(G_Wallets)
+  })
+  output$G_Percentage = renderPlotly(({
+    day_information <- data %>%
+      select(c("Date", "Seg",  "Wallets")) %>%
+      filter(Date == as.Date(input$date, format = "%Y-%m-%d")) %>%
+      mutate(all = Wallets[1]) %>%
+      mutate(percentage = Wallets / all) %>%
+      filter(Seg != "all") %>%
+      mutate(all = "all") %>%
+      select("Seg", "all", "percentage")
+    day_information <- day_information %>%
+      add_row(Seg = "other",
+              all = "all",
+              percentage = (1 - sum(day_information$percentage)))
+    gg <- day_information  %>%
+      ggplot() +
+      geom_bar(aes(x = all, y = percentage, fill = Seg),
+               stat = "identity",
+               width = 0.5) +
+      labs(title = "Percentage of Segments in All Wallets",
+           y = "Percentage",
+           fill = "Segment") +
+      theme_classic() +
+      theme(
+        axis.line.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank()
+      ) +
+      scale_y_continuous(labels = scales::percent)
+    ggplotly(gg)
+  }))
+  
+  
+  
+  #Page3
+  
+  
+  output$value <- renderPrint({
+    input$lambda
+  })
+  output$value <- renderPrint({
+    input$daynumber
+  })
+  output$pathnumber <- renderPrint({
+    input$pathnumber
+  })
+  output$Portfolio <- renderPrint({
+    input$Portfolio
+  })
+  
+  daily_return <- function(data, name) {
+    data <- data %>%
+      mutate(lag_1 = lag(Adj.Close)) %>%
+      mutate(log_return = log(Adj.Close) - log(lag_1))
+    return(data)
+  }
+  
+  NFTZ <- daily_return(nftz)
+  NFTZ$Date <- as.Date(NFTZ$Date, format = "%Y-%m-%d")
+  NFTZ$log_return[1] = 0.01
+  end = length(NFTZ$Date)
+  
+  NFTZ_Simulation <- reactive({
+    N = input$pathnumber
+    mu = mean(NFTZ$log_return)
+    sigma = sd(NFTZ$log_return)
+    S_0 = NFTZ$Adj.Close[end]
+    dt = 1 / 252
+    
+    Simulation_M <- function(N, t, mu, sigma, S_0, dt) {
+      S <- matrix(0, t, N)
+      for (i in 1:N) {
+        S[1, i] <- S_0
+        for (j in 1:(t - 1)) {
+          Z <- rnorm(1, 0, sqrt(dt))
+          S[j + 1, i] <-
+            S[j, i] * exp((mu - sigma ^ 2 / 2) * dt + sigma * Z)
+          
+        }
+      }
+      return(S)
+    }
+    S <- Simulation_M(N, input$daynumber, mu, sigma, S_0, dt)
+    
+    NFTZ_Simulation <- as.data.frame(S) %>%
+      mutate(Date = seq(NFTZ$Date[end] + 1, NFTZ$Date[end] + input$daynumber, 1)) %>%
+      pivot_longer(-Date, names_to = 'sim', values_to = 'price')
+    return(NFTZ_Simulation)
+  })
+  
+  E_return <- reactive({
+    E_return <- NFTZ_Simulation() %>%
+      group_by(Date) %>%
+      summarise(Adj.Close = mean(price))
+    return(E_return)
+  })
+  
+  
+  Prediction_Simulation <- reactive({
+    Prediction_Simulation <- NFTZ_Simulation() %>%
+      filter(Date == as.Date(NFTZ$Date[end] + input$daynumber, format = "%Y-%m-%d")) %>%
+      mutate(return = round((price / NFTZ$Adj.Close[end] - 1), 3)) %>%
+      arrange(return, descending = TRUE) %>%
+      mutate(win = if_else(return >= 0, 1, 0)) %>%
+      mutate(label = if_else(return >= 0,
+                             "Positive",
+                             "Negative"))
+    return(Prediction_Simulation)
+  })
+  
+  #Simulation
+  
+  output$G_Simulation <- renderPlotly({
+    NFTZ_Simulation() %>%
+      ggplot(aes(x = Date, y = price, color = sim)) +
+      geom_line() +
+      theme(
+        legend.position = 'none',
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank()
+      ) +
+      labs(title = paste(input$pathnumber, "Times Simulation Outcome"),
+           y = "Price")
+  })
+  
+  output$G_hist_Simulation = renderPlotly({
+    G_hist_Simulation <- Prediction_Simulation() %>%
+      ggplot(aes(x = return)) +
+      geom_histogram(aes(y = ..density.., fill = label),
+                     bins = 25,
+                     colour = 1) +
+      geom_density(size = 1) +
+      labs(
+        title = paste(
+          "Distribution of Return in Prediction in the End of",
+          input$daynumber,
+          "Days"
+        ) ,
+        x = "Return",
+        y = "Density",
+        colour = "Gender"
+      ) +
+      theme(
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.title = element_blank()
+      )
+    ggplotly(G_hist_Simulation)
+  })
+  
+  output$G_Expected = renderPlotly({
+    Graph_Simulation <- NFTZ %>%
+      select(c("Date", "Adj.Close")) %>%
+      rbind(E_return()) %>%
+      mutate(color = if_else(Date >= NFTZ$Date[end], "prediction", "historical"))
+    
+    Graph_Simulation$Date = as.Date(Graph_Simulation$Date, format = "%Y-%m-%d")
+    G_Expected <-
+      Graph_Simulation %>%  ggplot(mapping = aes(
+        x = Date,
+        y = Adj.Close,
+        color = color,
+        group = 1
+      )) +
+      geom_path() +
+      geom_vline(xintercept = NFTZ$Date[end], linetype = "dashed") +
+      labs(title = "Price Trend", y = "Price") +
+      theme(
+        legend.title = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank()
+      )
+    ggplotly(G_Expected)
+  })
+  
+  
+  #Some Conclusion(Done)
+  output$win_0.01 = renderText({
+    temp_df <- Prediction_Simulation()
+    temp_data <-
+      mean(temp_df$return[round(input$pathnumber * 0.99)])
+    return(paste(temp_data * 100, "%"))
+  })
+  output$win_0.05 = renderText({
+    temp_df <- Prediction_Simulation()
+    temp_data <-
+      mean(temp_df$return[round(input$pathnumber * 0.95)])
+    return(paste(temp_data * 100, "%"))
+  })
+  output$P_win = renderText({
+    temp_df <- Prediction_Simulation()
+    temp_data <- round(mean(temp_df$win), 4)
+    return(paste(temp_data * 100, "%"))
+  })
+  output$lose_0.01 = renderText({
+    temp_df <- Prediction_Simulation()
+    temp_data <-
+      mean(temp_df$return[round(input$pathnumber * 0.01)])
+    return(paste(temp_data * -100, "%"))
+  })
+  output$lose_0.05 = renderText({
+    temp_df <- Prediction_Simulation()
+    temp_data <-
+      mean(temp_df$return[round(input$pathnumber * 0.05)])
+    return(paste(temp_data * -100, "%"))
+  })
+  output$Expected_return = renderText({
+    temp_df <- Prediction_Simulation()
+    temp_data <- round(mean(temp_df$return), 4)
+    return(paste(temp_data * 100, "%"))
+  })
+  
+  #Hedge
+  
+  
+  Return_data <- reactive({
+    if (input$Portfolio == "Long NFTZ& Short ETH") {
+      temp_NFTZ <- daily_return(NFTZ) %>%
+        mutate(NFTZ_return = 1 * log_return)
+      temp_ETH <- daily_return(ETH) %>%
+        mutate(ETH_return = -1 * log_return)
+      Return_data <- temp_NFTZ  %>%
+        select("Date", "NFTZ_return") %>%
+        inner_join(temp_ETH %>%
+                     select("Date", "ETH_return"),
+                   by = c("Date" = "Date")) %>%
+        na.omit()
+    } else{
+      temp_NFTZ <- daily_return(NFTZ) %>%
+        mutate(NFTZ_return = -1 * log_return)
+      temp_ETH <- daily_return(ETH) %>%
+        mutate(ETH_return = 1 * log_return)
+      Return_data <- temp_NFTZ  %>%
+        select("Date", "NFTZ_return") %>%
+        inner_join(temp_ETH %>%
+                     select("Date", "ETH_return"),
+                   by = c("Date" = "Date")) %>%
+        na.omit()
+    }
+    return(Return_data)
+  })
+  portfolio_values <- reactive({
+    mean_ret <- colMeans(Return_data() %>%
+                           select(c(2, 3)))
+    cov_mat <- cov(Return_data() %>%
+                     select(c(2, 3)))
+    r = 0.00
+    num_port <- 1000
+    all_wei <- matrix(nrow = num_port,
+                      ncol = 2)
+    port_returns <- vector('numeric', length = num_port)
+    port_risk <- vector('numeric', length = num_port)
+    sharpe_ratio <- vector('numeric', length = num_port)
+    
+    for (i in seq_along(port_returns)) {
+      wei_start <- runif(2)
+      wei_start <- wei_start / sum(wei_start)
+      all_wei[i, ] <- wei_start
+      port_ret <- (sum(wei_start * mean_ret) + 1) ^ 1 - 1
+      port_returns[i] <- port_ret
+      port_sd <- sqrt(t(wei_start) %*% (cov_mat  %*% wei_start))
+      port_risk[i] <- port_sd
+      sr <- port_ret / port_sd
+      sharpe_ratio[i] <- sr
+      
+    }
+    portfolio_values <- tibble(Return = port_returns,
+                               Risk = port_risk,
+                               SharpeRatio = sharpe_ratio)
+    all_wei <- tk_tbl(all_wei)
+    
+    colnames(all_wei) <- colnames(Return_data() %>%
+                                    select(c(2, 3)))
+    portfolio_values <- tk_tbl(cbind(all_wei, portfolio_values))
+    return(portfolio_values)
+  })
+  min_var <- reactive({
+    temp <- portfolio_values()
+    temp_out <- temp[which.min(temp$Risk), ]
+  })
+  max_sr <- reactive({
+    temp <- portfolio_values()
+    temp_out <- temp[which.max(temp$SharpeRatio), ]
+  })
+  output$G_efficient_frontier <- renderPlotly({
+    G_efficient_frontier <- portfolio_values() %>%
+      select("Risk", "Return", "SharpeRatio") %>%
+      ggplot(mapping = aes(x = Risk, y = Return, color = SharpeRatio)) +
+      geom_point() +
+      theme_classic() +
+      scale_y_continuous(labels = scales::percent) +
+      scale_x_continuous(labels = scales::percent) +
+      labs(x = 'Daily Risk',
+           y = 'Daily Returns',
+           title = "Portfolio Optimization & Efficient Frontier") +
+      geom_point(aes(x = Risk,
+                     y = Return),
+                 data = min_var(),
+                 color = 'red') +
+      geom_point(aes(x = Risk,
+                     y = Return),
+                 data = max_sr(),
+                 color = 'red')
+    
+    
+    ggplotly(G_efficient_frontier)
+  })
+  output$G_portfolio_composition <- renderPlotly({
+    G_portfolio_composition <- max_sr() %>%
+      rename("NFTZ" = "NFTZ_return",
+             "ETH" = "ETH_return") %>%
+      mutate(Seg = "Max Sharpe Ratio") %>%
+      full_join(
+        min_var() %>%
+          mutate(Seg = "Min Variance") %>%
+          rename("NFTZ" = "NFTZ_return",
+                 "ETH" = "ETH_return")
+      ) %>%
+      pivot_longer(c(1, 2), names_to = "ETF", values_to = "weight") %>%
+      ggplot() +
+      geom_bar(aes(x = weight, y = Seg, fill = ETF), stat = "identity") +
+      theme_bw() +
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank()) +
+      labs(
+        title = "Portfolio Composition Under Two Strategies",
+        x = "Weight",
+        y = " Strategy",
+        fill = "Asset"
+      )
+    ggplotly(G_portfolio_composition)
+  })
+  output$G_history_Performance <- renderPlotly({
+    temp_max_sr <- max_sr()
+    temp_min_var <- min_var()
+    max_NFTZ_Wei =  temp_max_sr$NFTZ_return[1]
+    max_ETH_Wei =  temp_max_sr$ETH_return[1]
+    min_NFTZ_Wei =  temp_min_var$NFTZ_return[1]
+    min_ETH_Wei =  temp_min_var$ETH_return[1]
+    
+    
+    temp_data <-  Return_data() %>%
+      mutate(Maximize_Shape_Ratio = NFTZ_return * max_NFTZ_Wei + ETH_return * max_ETH_Wei) %>%
+      mutate(Minimize_Variance = NFTZ_return * min_NFTZ_Wei  + ETH_return * min_ETH_Wei)
+    
+    temp_data$Date <- as.Date(temp_data$Date, format = "%Y-%m-%d")
+    G_history_Performance <- temp_data %>%
+      select("Date", "Maximize_Shape_Ratio", "Minimize_Variance") %>%
+      pivot_longer(c(2, 3), names_to = "Seg", values_to = "return") %>%
+      ggplot() +
+      geom_boxplot(aes(x = Seg, y = return, color = Seg)) +
+      theme_bw() +
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = 'none'
+      ) +
+      labs(title = "Portfolio History Return Comparsion",
+           x = " Portfolio",
+           y = "Return")
+    ggplotly(G_history_Performance)
+  })
+  
+  output$NFTZ_max = renderText({
+    temp <- max_sr()
+    tempp <- paste(round(temp[1], 3) * 100, "%")
+  })
+  output$ETH_max = renderText({
+    temp <- max_sr()
+    tempp <- paste(round(temp[2], 3) * 100, "%")
+  })
+  output$MR_max = renderText({
+    temp <- max_sr()
+    tempp <- paste(round(temp[3], 3) * 100, "%")
+  })
+  output$Risk_max = renderText({
+    temp <- max_sr()
+    tempp <- paste(round(temp[4], 3) * 100, "%")
+  })
+  output$NFTZ_min = renderText({
+    temp <- min_var()
+    tempp <- paste(round(temp[1], 3) * 100, "%")
+  })
+  output$ETH_min = renderText({
+    temp <- min_var()
+    tempp <- paste(round(temp[2], 3) * 100, "%")
+  })
+  output$MR_min = renderText({
+    temp <- min_var()
+    tempp <- paste(round(temp[3], 3) * 100, "%")
+  })
+  output$Risk_min = renderText({
+    temp <- min_var()
+    tempp <- paste(round(temp[4], 3) * 100, "%")
+  })
+  
+  
+  #Page4(Done)
+  output$NFT_Market = renderDataTable({
+    return(datatable(data, rownames = FALSE))
+  })
+  output$NFT_Tweet = renderDataTable({
+    return(datatable(nft_tweet, rownames = FALSE))
+  })
+  output$NFTZ = renderDataTable({
+    return(datatable(nftz, rownames = FALSE))
+  })
+  output$ETH = renderDataTable({
+    return(datatable(ETH, rownames = FALSE))
+  })
+  
+  #after all codes
+  removeUI(selector = '#Welcome')
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
